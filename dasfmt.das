@@ -53,38 +53,9 @@ def private get_arg(args: array<string>; name: string; def_val: string = ""): st
 def main()
     var args <- get_command_line_arguments()
     log::init_log(args)
-    let threadsNum = max(args |> get_arg("--t") <| get_total_hw_threads() - 1, 1)
-    let run = args |> get_arg("--run") <| ""
+    let threadsNum = max(args |> get_arg("--t") <| get_total_hw_threads(), 1)
 
     let startTime = ref_time_ticks()
-
-    if !empty(run)
-        let file_name = run
-        var before: string
-        var after: string
-        var open = false
-        log::info("-- {file_name}")
-        var res = 0
-        // TODO: compile before and after
-        fopen(file_name, "rb") <| $(fr)
-            if fr != null
-                fmap(fr) <| $(data)
-                    open = true
-                    before = string(data)
-                    after = format_source(data)
-        if !open
-            log::error("Unable to open '{file_name}'\n")
-            return
-
-        if before != after
-            var write = false
-            fopen(file_name, "wb") <| $(fw)
-                if fw != null
-                    fwrite(fw, after)
-                    write = true
-            if !write
-                log::error("Unable to open '{file_name}' for writing\n")
-        return
 
     var inputPaths: array<string>
     collect_input_paths(args, inputPaths)
@@ -104,19 +75,28 @@ def main()
                     let file = files[length(files) - 1]
                     files |> pop()
                     new_thread <| @
-                        let args <- get_command_line_arguments()
-                        let singleTest = "{args[0]} {args[1]} -- --run {file}"
-                        var exitCode = 1
-                        unsafe
-                            exitCode = popen(singleTest) <| $(f)
-                                if f == null
-                                    log::error("Internal error: Failed to execute cmd `{singleTest}`")
-                                else
-                                    while !feof(f)
-                                        let st = fgets(f)
-                                        print(st)
-                        if exitCode != 0
-                            log::error("Internal error: cmd `{singleTest}` returned exit code {exitCode}")
+                        var before: string
+                        var after: string
+                        var open = false
+                        log::info("-- {file}")
+                        fopen(file, "rb") <| $(fr)
+                            if fr != null
+                                fmap(fr) <| $(data)
+                                    open = true
+                                    before = string(data)
+                                    after = format_source(data)
+                        if !open
+                            log::error("Unable to open '{file}'\n")
+                            return
+
+                        if before != after
+                            var write = false
+                            fopen(file, "wb") <| $(fw)
+                                if fw != null
+                                    fwrite(fw, after)
+                                    write = true
+                            if !write
+                                log::error("Unable to open '{file}' for writing\n")
                         status |> notify
                 status |> join
 
