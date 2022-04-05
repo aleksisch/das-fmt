@@ -74,7 +74,7 @@ def main()
                 for i in range(batchNum)
                     let file = files[length(files) - 1]
                     files |> pop()
-                    new_thread <| @
+                    new_job <| @
                         var before: string
                         var after: string
                         var open = false
