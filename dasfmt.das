@@ -11,7 +11,6 @@ require daslib/jobque_boost
 require daslib/das_source_formatter
 
 
-
 def private collect_input_paths(args: array<string>; var paths: array<string>)
     for i in range(length(args) - 1)
         if args[i] == "--path"
@@ -33,20 +32,9 @@ def private collect_files(input_paths: array<string>; var files: array<string>):
     return true
 
 
-
 def private get_arg(args: array<string>; name: string; def_val: int = 0): int
     let idx = find_index(args, name)
     return idx >= 0 && idx + 1 < length(args) ? int(args[idx + 1]) : def_val
-
-
-def private get_arg(args: array<string>; name: string; def_val: float = 0.): float
-    let idx = find_index(args, name)
-    return idx >= 0 && idx + 1 < length(args) ? float(args[idx + 1]) : def_val
-
-
-def private get_arg(args: array<string>; name: string; def_val: string = ""): string
-    let idx = find_index(args, name)
-    return idx >= 0 && idx + 1 < length(args) ? args[idx + 1] : def_val
 
 
 [export]
@@ -62,7 +50,7 @@ def main()
     collect_input_paths(args, inputPaths)
     var files: array<string>
     if !collect_files(inputPaths, files)
-            log::error("Unable to collect files list\n")
+        log::error("Unable to collect files list\n")
         unsafe
             fio::exit(1)
         return
@@ -78,37 +66,37 @@ def main()
                     files |> pop()
                     unsafe
                         new_job <| @ [[& verified]]
-                        var before: string
-                        var after: string
-                        var open = false
-                        fopen(file, "rb") <| $(fr)
-                            if fr != null
-                                fmap(fr) <| $(data)
-                                    open = true
-                                    before = string(data)
-                                    after = format_source(data)
+                            var before: string
+                            var after: string
+                            var open = false
+                            fopen(file, "rb") <| $(fr)
+                                if fr != null
+                                    fmap(fr) <| $(data)
+                                        open = true
+                                        before = string(data)
+                                        after = format_source(data)
                             let changed = before != after
-                        if !open
-                            log::info("-- {file}")
+                            if !open
+                                log::info("-- {file}")
                                 log::error("Unable to open '{file}'")
                             elif verify
                                 if changed
                                     log::error("Unformatted file '{file}'")
                                     verified = false
                             elif !changed
-                            log::info("-- {file}")
-                        else
-                            var write = false
-                            fopen(file, "wb") <| $(fw)
-                                if fw != null
-                                    fwrite(fw, after)
-                                    write = true
-                            if write
-                                log::info("++ {file}")
-                            else
                                 log::info("-- {file}")
+                            else
+                                var write = false
+                                fopen(file, "wb") <| $(fw)
+                                    if fw != null
+                                        fwrite(fw, after)
+                                        write = true
+                                if write
+                                    log::info("++ {file}")
+                                else
+                                    log::info("-- {file}")
                                     log::error("Unable to open '{file}' for writing")
-                        status |> notify
+                            status |> notify
                 status |> join
 
     if verify
