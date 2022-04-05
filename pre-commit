@@ -1,5 +1,7 @@
 #!/bin/sh
 
+root="$(git rev-parse --show-toplevel)"
+
 files=$((git diff --cached --name-only --diff-filter=ACMR | grep -Ei "\.das$") || true)
 
 if [ ! -z "${files}" ]; then
@@ -8,7 +10,7 @@ if [ ! -z "${files}" ]; then
     for it in $files; do
         paths+="--path ${it} "
     done
-    daScript dasfmt.das -- ${paths} || result = 1
+    daScript dasfmt.das -- ${paths} || result=1
 
     for it in $files; do
         git add "${it}"
