@@ -54,6 +54,7 @@ def main()
     var args <- get_command_line_arguments()
     log::init_log(args)
     let threadsNum = max(args |> get_arg("--t") <| get_total_hw_threads(), 1)
+    let verify = args |> find_index("--verify") >= 0
 
     let startTime = ref_time_ticks()
 
@@ -61,11 +62,12 @@ def main()
     collect_input_paths(args, inputPaths)
     var files: array<string>
     if !collect_files(inputPaths, files)
-        unsafe
             log::error("Unable to collect files list\n")
+        unsafe
             fio::exit(1)
         return
     let filesNum = length(files)
+    var verified = true
 
     with_job_que <|
         while length(files) > 0
@@ -74,21 +76,26 @@ def main()
                 for i in range(batchNum)
                     let file = files[length(files) - 1]
                     files |> pop()
-                    new_job <| @
+                    unsafe
+                        new_job <| @ [[& verified]]
                         var before: string
                         var after: string
                         var open = false
-                        log::info("-- {file}")
                         fopen(file, "rb") <| $(fr)
                             if fr != null
                                 fmap(fr) <| $(data)
                                     open = true
                                     before = string(data)
                                     after = format_source(data)
+                            let changed = before != after
                         if !open
                             log::info("-- {file}")
-                            log::error("Unable to open '{file}'\n")
-                        elif before == after
+                                log::error("Unable to open '{file}'")
+                            elif verify
+                                if changed
+                                    log::error("Unformatted file '{file}'")
+                                    verified = false
+                            elif !changed
                             log::info("-- {file}")
                         else
                             var write = false
@@ -100,9 +107,18 @@ def main()
                                 log::info("++ {file}")
                             else
                                 log::info("-- {file}")
-                                log::error("Unable to open '{file}' for writing\n")
+                                    log::error("Unable to open '{file}' for writing")
                         status |> notify
                 status |> join
+
+    if verify
+        if verified
+            log::info("Verified! {filesNum} files in {time_dt_hr(get_time_usec(startTime))}")
+            return
+        else
+            log::info("Verification failed! {filesNum} files in {time_dt_hr(get_time_usec(startTime))}")
+            unsafe
+                fio::exit(1)
 
     log::info("Complete! {filesNum} files in {time_dt_hr(get_time_usec(startTime))}")
 
