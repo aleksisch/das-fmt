@@ -86,16 +86,20 @@ def main()
                                     before = string(data)
                                     after = format_source(data)
                         if !open
+                            log::info("-- {file}")
                             log::error("Unable to open '{file}'\n")
-                            return
-
-                        if before != after
+                        elif before == after
+                            log::info("-- {file}")
+                        else
                             var write = false
                             fopen(file, "wb") <| $(fw)
                                 if fw != null
                                     fwrite(fw, after)
                                     write = true
-                            if !write
+                            if write
+                                log::info("++ {file}")
+                            else
+                                log::info("-- {file}")
                                 log::error("Unable to open '{file}' for writing\n")
                         status |> notify
                 status |> join
