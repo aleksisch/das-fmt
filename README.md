@@ -8,4 +8,5 @@ dasfmt is a tool that automatically formats daScript source code.
 
 ### dastest.das arguments
 - `--path`: Path to the folder with scripts or single script name
+- `--verify`: (dry run) Doesn't change files, just make sure that all files are already formatted
 - `--t`: Max number of used threads
