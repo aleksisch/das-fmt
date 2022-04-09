@@ -55,12 +55,12 @@ def main()
             fio::exit(1)
         return
 
-    var excludePaths : array<string>
-    collect_input_paths(args, "--exclude-path", excludePaths)
+    var excludeMasks : array<string>
+    collect_input_paths(args, "--exclude-mask", excludeMasks)
     var idx = length(files) - 1
     while idx >= 0
         let path = files[idx]
-        for excludePath in excludePaths
+        for excludePath in excludeMasks
             if path |> find(excludePath) >= 0
                 log::info("Excluding file '{path}' mask '{excludePath}'")
                 files |> erase(idx)
