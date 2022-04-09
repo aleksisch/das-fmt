@@ -11,14 +11,14 @@ require daslib/jobque_boost
 require daslib/das_source_formatter
 
 
-def private collect_input_paths(args: array<string>; var paths: array<string>)
+def private collect_input_paths(args : array<string>; key : string; var paths : array<string>)
     for i in range(length(args) - 1)
-        if args[i] == "--path"
+        if args[i] == key
             paths |> push <| args[i + 1]
 
 
-def private collect_files(input_paths: array<string>; var files: array<string>): bool
-    var cache: table<string; void?>
+def private collect_files(input_paths : array<string>; var files : array<string>) : bool
+    var cache : table<string; void?>
     for path in input_paths
         if path |> ends_with(".das")
             if !cache |> key_exists(path)
@@ -32,7 +32,7 @@ def private collect_files(input_paths: array<string>; var files: array<string>):
     return true
 
 
-def private get_arg(args: array<string>; name: string; def_val: int = 0): int
+def private get_arg(args : array<string>; name : string; def_val : int = 0) : int
     let idx = find_index(args, name)
     return idx >= 0 && idx + 1 < length(args) ? int(args[idx + 1]) : def_val
 
@@ -46,14 +46,27 @@ def main()
 
     let startTime = ref_time_ticks()
 
-    var inputPaths: array<string>
-    collect_input_paths(args, inputPaths)
-    var files: array<string>
+    var inputPaths : array<string>
+    collect_input_paths(args, "--path", inputPaths)
+    var files : array<string>
     if !collect_files(inputPaths, files)
         log::error("Unable to collect files list\n")
         unsafe
             fio::exit(1)
         return
+
+    var excludePaths : array<string>
+    collect_input_paths(args, "--exclude-path", excludePaths)
+    var idx = length(files) - 1
+    while idx >= 0
+        let path = files[idx]
+        for excludePath in excludePaths
+            if path |> find(excludePath) >= 0
+                log::info("Excluding file '{path}' mask '{excludePath}'")
+                files |> erase(idx)
+                break
+        idx--
+
     let filesNum = length(files)
     var verified = true
 
@@ -66,8 +79,8 @@ def main()
                     files |> pop()
                     unsafe
                         new_job <| @ [[& verified]]
-                            var before: string
-                            var after: string
+                            var before : string
+                            var after : string
                             var open = false
                             fopen(file, "rb") <| $(fr)
                                 if fr != null
