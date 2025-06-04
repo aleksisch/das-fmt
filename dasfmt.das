@@ -10,7 +10,55 @@ require log
 
 require daslib/jobque_boost
 require daslib/das_source_formatter
+require daslib/strings_boost
 
+
+def private normalize_line_endings(text : string) : string {
+    // Convert all line endings to LF for consistent comparison
+    var result = text
+    result = replace(result, "\r\n", "\n")  // Windows CRLF -> LF
+    result = replace(result, "\r", "\n")    // Old Mac CR -> LF
+    return result
+}
+
+
+def private collect_diff(before, after : string) : tuple<differ : bool; log : string> {
+    // Normalize line endings for comparison
+    let normalized_before = normalize_line_endings(before)
+    let normalized_after = normalize_line_endings(after)
+
+    // If identical after normalization, no differences
+    if (normalized_before == normalized_after) {
+        return (false, "")
+    }
+
+    // Split into lines for line-by-line comparison
+    let lines_before = split(normalized_before, "\n")
+    let lines_after = split(normalized_after, "\n")
+    var diff_output = ""
+
+    let len_before = length(lines_before)
+    let len_after = length(lines_after)
+    let max_lines = max(len_before, len_after)
+
+    for (i in range(max_lines)) {
+        if (i >= len_before) {
+            // Added lines
+            diff_output += green_str("{i+1}a1\n> {lines_after[i]}\n")
+        } elif (i >= len_after) {
+            // Removed lines
+            diff_output += red_str("{i+1}d1\n< {lines_before[i]}\n")
+        } elif (lines_before[i] != lines_after[i]) {
+            // Changed lines
+            diff_output += (blue_str("{i+1}c1\n")
+                        + red_str("< {lines_before[i]}\n")
+                        + "---\n"
+                        + green_str("> {lines_after[i]}\n"))
+        }
+    }
+
+    return (true, diff_output)
+}
 
 def private collect_input_paths(args : array<string>; key : string; var paths : array<string>) {
     for (i in range(length(args) - 1)) {
@@ -106,13 +154,15 @@ def main() {
                                     }
                                 }
                             }
-                            let changed = before != after
+                            let diff_result = collect_diff(before, after)
+                            let changed = diff_result.differ
                             if (!open) {
                                 log::info("-- {file}")
                                 log::error("Unable to open '{file}'")
                             } elif (verify) {
                                 if (changed) {
                                     log::error("Unformatted file '{file}'")
+                                    log::info(diff_result.log)
                                     verified = false
                                 }
                             } elif (!changed) {
@@ -127,6 +177,7 @@ def main() {
                                 }
                                 if (write) {
                                     log::info("++ {file}")
+                                    log::info(diff_result.log)
                                 } else {
                                     log::info("-- {file}")
                                     log::error("Unable to open '{file}' for writing")

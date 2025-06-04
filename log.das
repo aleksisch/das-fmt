@@ -13,11 +13,11 @@ let private uriPaths = false
 
 var useTtyColors = false
 
-def info_raw(msg : string) {
+def info_raw(msg : string | #) {
     print("{msg}")
 }
 
-def info(msg : string) {
+def info(msg : string | #) {
     if (!verbose) {
         print("{msg}\n")
     } else {
@@ -26,7 +26,7 @@ def info(msg : string) {
 }
 
 
-def warn(msg : string) {
+def warn(msg : string | #) {
     if (!verbose) {
         print(yellow_str("[W] {msg}\n"))
     } else {
@@ -35,7 +35,7 @@ def warn(msg : string) {
 }
 
 
-def error(msg : string) {
+def error(msg : string | #) {
     if (!verbose) {
         print(red_str("[E] {msg}\n"))
     } else {
@@ -44,7 +44,7 @@ def error(msg : string) {
 }
 
 
-def green(msg : string) {
+def green(msg : string | #) {
     if (!verbose) {
         print(green_str("{msg}\n"))
     } else {
@@ -53,7 +53,7 @@ def green(msg : string) {
 }
 
 
-def red(msg : string) {
+def red(msg : string | #) {
     if (!verbose) {
         print(red_str("{msg}\n"))
     } else {
@@ -62,7 +62,7 @@ def red(msg : string) {
 }
 
 
-def blue(msg : string) {
+def blue(msg : string | #) {
     if (!verbose) {
         print(blue_str("{msg}\n"))
     } else {
@@ -79,23 +79,24 @@ def file_info_hr(at : LineInfo; uri_path : bool) {
 }
 
 
-def private red_str(str : string) {
+def red_str(str : string) {
+    debug(useTtyColors)
     return useTtyColors ? "\x1B[31m{str}\x1B[0m" : str
 }
-def private green_str(str : string) {
+def green_str(str : string) {
     return useTtyColors ? "\x1B[32m{str}\x1B[0m" : str
 }
-def private yellow_str(str : string) {
+def yellow_str(str : string) {
     return useTtyColors ? "\x1B[33m{str}\x1B[0m" : str
 }
-def private blue_str(str : string) {
+def blue_str(str : string) {
     return useTtyColors ? "\x1B[34m{str}\x1B[0m" : str
 }
 
 def time_dt_hr(dt : int) : string {
     return build_string <| $(str) {
         str |> write("(")
-        str |> format("%.6f", double(dt) / 1000000.0lf)
+        str |> fmt(":.6f", double(dt) / 1000000.0lf)
         str |> write("s)")
     }
 }
