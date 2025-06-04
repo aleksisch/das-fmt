@@ -107,7 +107,13 @@ def init_log() {
 
 
 def init_log(args : array<string>) {
-    let term = get_env_variable("TERM")
-    let probabblyColor = find(term, "xterm") >= 0 || find(term, "color") >= 0 || find(term, "ansi") >= 0 || find(term, "vt100") >= 0
-    log::useTtyColors = (probabblyColor && !has_value(args, "--no-color")) || args |> has_value("--color")
+    let noColor = has_env_variable("NO_COLOR") ? get_env_variable("NO_COLOR") : "0"
+    let forceNoColor = noColor != "0" && noColor != "false"
+    if (forceNoColor || has_value(args, "--no-color")) {
+        useTtyColors = false
+    } else {
+        let term = get_env_variable("TERM")
+        let probabblyColor = length(term) > 3 && (find(term, "xterm") >= 0 || find(term, "color") >= 0 || find(term, "ansi") >= 0 || find(term, "vt100") >= 0)
+        useTtyColors = has_value(args, "--color") || probabblyColor
+    }
 }
