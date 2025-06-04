@@ -6,6 +6,7 @@ module log shared
 require rtti
 require uriparser
 require strings
+require fio
 
 
 let private verbose = false
@@ -80,7 +81,6 @@ def file_info_hr(at : LineInfo; uri_path : bool) {
 
 
 def red_str(str : string) {
-    debug(useTtyColors)
     return useTtyColors ? "\x1B[31m{str}\x1B[0m" : str
 }
 def green_str(str : string) {
@@ -107,5 +107,7 @@ def init_log() {
 
 
 def init_log(args : array<string>) {
-    log::useTtyColors = args |> has_value("--color")
+    let term = get_env_variable("TERM")
+    let probabblyColor = find(term, "xterm") >= 0 || find(term, "color") >= 0 || find(term, "ansi") >= 0 || find(term, "vt100") >= 0
+    log::useTtyColors = (probabblyColor && !has_value(args, "--no-color")) || args |> has_value("--color")
 }

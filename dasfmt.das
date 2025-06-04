@@ -141,7 +141,8 @@ def main() {
                     let file = files[length(files) - 1]
                     files |> pop()
                     unsafe {
-                        new_job <| @ capture(& verified) {
+                        new_job <| @ capture(& verified, :=args) {
+                            log::init_log(args)
                             var before : string
                             var after : string
                             var open = false
