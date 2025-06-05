@@ -101,6 +101,7 @@ def main() {
     log::init_log(args)
     let threadsNum = max(args |> get_arg("--t") <| get_total_hw_threads(), 1)
     let verify = args |> find_index("--verify") >= 0
+    let verbose = args |> find_index("--verbose") >= 0
 
     let startTime = ref_time_ticks()
 
@@ -178,7 +179,9 @@ def main() {
                                 }
                                 if (write) {
                                     log::info("++ {file}")
-                                    log::info(diff_result.log)
+                                    if (verbose) {
+                                        log::info(diff_result.log)
+                                    }
                                 } else {
                                     log::info("-- {file}")
                                     log::error("Unable to open '{file}' for writing")
